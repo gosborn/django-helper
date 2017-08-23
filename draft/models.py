@@ -39,33 +39,38 @@ class Player(models.Model):
     bye_week = models.IntegerField()
     standard_dev = models.FloatField()
     nerd_rank = models.FloatField()
-    nerd_position_rank = models.FloatField()
-    nerd_overall_rank = models.FloatField()
+    nerd_position_rank = models.IntegerField()
+    nerd_overall_rank = models.IntegerField()
     nerd_id = models.IntegerField()
 
-    nerd_estimated_points = models.IntegerField()
+    nerd_estimated_points = models.IntegerField(null=True)
 
     #QB specific fields
-    completions = models.IntegerField()
-    passing_attempts = models.IntegerField()
-    passing_yards = models.IntegerField()
-    passing_tds = models.IntegerField()
+    completions = models.IntegerField(null=True)
+    pass_attempts = models.IntegerField(null=True)
+    pass_yards = models.IntegerField(null=True)
+    pass_tds = models.IntegerField(null=True)
+    pass_interceptions = models.IntegerField(null=True)
+
 
     # non-def fields
-    rush_attempts = models.IntegerField()
-    rush_yards = models.IntegerField()
-    rush_tds = models.IntegerField()
-    fumbles = models.IntegerField()
-    receptions = models.IntegerField()
-    receiving_yards = models.IntegerField()
-    receiving_tds = models.IntegerField()
+    rush_attempts = models.IntegerField(null=True)
+    rush_yards = models.IntegerField(null=True)
+    rush_tds = models.IntegerField(null=True)
+    fumbles = models.IntegerField(null=True)
+    receptions = models.IntegerField(null=True)
+    receiving_yards = models.IntegerField(null=True)
+    receiving_tds = models.IntegerField(null=True)
 
     # def fields
-    sacks = models.IntegerField()
-    interceptions = models.IntegerField()
-    fumble_recoveries = models.IntegerField()
-    def_tds = models.IntegerField()
-    special_team_tds = models.IntegerField()
+    sacks = models.IntegerField(null=True)
+    interceptions = models.IntegerField(null=True)
+    fumble_recoveries = models.IntegerField(null=True)
+    def_tds = models.IntegerField(null=True)
+    special_team_tds = models.IntegerField(null=True)
+
+    def __unicode__(self):
+        return u'{} {}'.format(self.first_name, self.last_name)
 
 
 class DraftPick(models.Model):
