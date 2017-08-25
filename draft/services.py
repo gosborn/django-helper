@@ -1,12 +1,20 @@
 from secrets import FANTASY_NERD_API_KEY as api_key
 import requests
-from draft.models import Player
+from draft.models import Player, DraftPick
 
 
 class PlayerPopulator(object):
     BASE_URL = 'https://www.fantasyfootballnerd.com/service/'
     DRAFTABLE_URL = 'draft-rankings/json/{}/1/'
     STATS_URL = 'draft-projections/json/{}/{}/'
+
+    def populate_player_db(self):
+        self.populate_draftable_players()
+        self.populate_quarterback_stats()
+        self.populate_running_back_stats()
+        self.populate_wide_receiver_stats()
+        self.populate_tight_end_stats()
+        self.populate_def_stats()
 
     def get_draftable_players(self):
         response = requests.get(self.BASE_URL + self.DRAFTABLE_URL.format(api_key))
@@ -125,3 +133,72 @@ class PlayerPopulator(object):
                 player.fumble_recoveries = data.get('fumbleRec')
                 player.special_teams_tds = data.get('specialTeamTD')
                 player.save()
+
+
+class CustomProjectionCalculator(object):
+
+    def __init__(self, draft):
+        self.draft = draft
+        self.scoring = draft.scoring
+
+    def calculate_all_stats(self):
+        s = self.scoring
+        for p in Player.objects.all():
+
+            points = 0
+            if p.pass_yards:
+                points += (s.passing_yard * p.pass_yards)
+            if p.pass_tds:
+                points += (s.pass_td * p.pass_tds)
+            if p.pass_interceptions:
+                points += (s.interception * p.pass_interceptions)
+            if p.rush_yards:
+                points += (s.rushing_yard * p.rush_yards)
+            if p.rush_tds:
+                points += (s.rush_td * p.rush_tds)
+            if p.receptions:
+                points += (s.reception * p.receptions)
+            if p.receiving_yards:
+                points += (s.receiving_yard * p.receiving_yards)
+            if p.receiving_tds:
+                points += (s.receiving_td * p.receiving_tds)
+            if p.fumbles:
+                points += (s.fumble * p.fumbles)
+
+            if p.sacks:
+                points += (s.def_sack * p.sacks)
+            if p.interceptions:
+                points += (s.def_interception * p.interceptions)
+            if p.fumble_recoveries:
+                points += (s.def_fumble_recovery * p.fumble_recoveries)
+            if p.def_tds:
+                points += (s.def_td * p.def_tds)
+            if p.special_team_tds:
+                points += (s.special_team_td * p.special_team_tds)
+
+            print(p)
+            print(points)
+
+            DraftPick.objects.create(
+                player=p,
+                draft=self.draft,
+                estimated_points=points
+            )
+
+
+class AnalysisTools(object):
+
+    def print_rankings(self):
+        position = 1
+        for dp in DraftPick.objects.filter(player__position__in=['RB', 'WR', 'TE']).order_by('-estimated_points')[:150]:
+            print('{} vs nerd {} ({})// {} // {} {} // {} vs nerd: {} // diff: {}'.format(position,
+                                                                                          dp.player.nerd_overall_rank, (
+                                                                                          position - dp.player.nerd_overall_rank),
+                                                                                          dp.player.position,
+                                                                                          dp.player.first_name,
+                                                                                          dp.player.last_name,
+                                                                                          dp.estimated_points,
+                                                                                          dp.player.nerd_estimated_points,
+                                                                                          (
+                                                                                          dp.estimated_points - dp.player.nerd_estimated_points)))
+            position = position + 1

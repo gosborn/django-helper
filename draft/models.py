@@ -3,11 +3,29 @@ from __future__ import unicode_literals
 
 from django.db import models
 
-# Create your models here.
+
+class Scoring(models.Model):
+    label = models.CharField(max_length=256)
+    passing_yard = models.FloatField(null=True)
+    pass_td = models.FloatField(null=True)
+    interception = models.FloatField(null=True)
+    rushing_yard = models.FloatField(null=True)
+    rush_td = models.FloatField(null=True)
+    reception = models.FloatField(null=True)
+    receiving_yard = models.FloatField(null=True)
+    receiving_td = models.FloatField(null=True)
+    fumble = models.FloatField(null=True)
+
+    def_sack = models.FloatField(null=True)
+    def_interception = models.FloatField(null=True)
+    def_fumble_recovery = models.FloatField(null=True)
+    def_td = models.FloatField(null=True)
+    special_team_td = models.FloatField(null=True)
 
 
 class Draft(models.Model):
     name = models.CharField(max_length=256)
+    scoring = models.ForeignKey(Scoring, null=True)
 
 
 class Team(models.Model):
@@ -76,5 +94,8 @@ class Player(models.Model):
 class DraftPick(models.Model):
     player = models.ForeignKey(Player)
     draft = models.ForeignKey(Draft)
-    team = models.ForeignKey(Team)
-    position = models.IntegerField()
+    team = models.ForeignKey(Team, null=True)
+    estimated_points = models.FloatField(null=True)
+
+    def __unicode__(self):
+        return u'{} {}: {}'.format(self.player.first_name, self.player.last_name, self.estimated_points)
