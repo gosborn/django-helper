@@ -1,6 +1,8 @@
 from secrets import FANTASY_NERD_API_KEY as api_key
 import requests
 from draft.models import Player, DraftPick
+import unicodecsv
+import numpy
 
 
 class PlayerPopulator(object):
@@ -202,3 +204,52 @@ class AnalysisTools(object):
                                                                                           (
                                                                                           dp.estimated_points - dp.player.nerd_estimated_points)))
             position = position + 1
+
+    def create_csv(self):
+        average_qb_points = numpy.mean(DraftPick.objects.filter(player__position__in=['QB'])[:20].values_list('estimated_points', flat=True))
+        average_rb_points = numpy.mean(DraftPick.objects.filter(player__position__in=['RB'])[:40].values_list('estimated_points', flat=True))
+        average_te_points = numpy.mean(
+            DraftPick.objects.filter(player__position__in=['TE'])[:40].values_list('estimated_points', flat=True))
+        average_wr_points = numpy.mean(DraftPick.objects.filter(player__position__in=['WR'])[:80].values_list('estimated_points', flat=True))
+
+        with open('report2.csv', 'wb') as f:
+            writer = unicodecsv.writer(f, encoding='utf-8')
+            writer.writerow([
+                'first_name',
+                'last_name',
+                'position',
+                'bye_week',
+                'nfl_team',
+                'nerd_rank',
+                'nerd_position_rank',
+                'nerd_estimated_points',
+                'my_estimated_points',
+                'points_above_avg',
+            ])
+            for dp in DraftPick.objects.order_by('player__nerd_overall_rank')[:200]:
+                writer.writerow([
+                    dp.player.first_name,
+                    dp.player.last_name,
+                    dp.player.position,
+                    dp.player.bye_week,
+                    dp.player.nfl_team,
+                    dp.player.nerd_overall_rank,
+                    dp.player.nerd_position_rank,
+                    dp.player.nerd_estimated_points,
+                    dp.estimated_points,
+                    self.points_above_avg(dp, average_qb_points, average_rb_points, average_te_points, average_wr_points)
+                ])
+
+    def points_above_avg(self, dp, avg_qb, avg_rb, avg_te, avg_wr):
+        if dp.estimated_points:
+            if dp.player.position == 'QB':
+                return dp.estimated_points - avg_qb
+            if dp.player.position == 'RB':
+                return dp.estimated_points - avg_rb
+            if dp.player.position == 'TE':
+                return dp.estimated_points - avg_te
+            if dp.player.position == 'WR':
+                return dp.estimated_points - avg_wr
+
+
+
